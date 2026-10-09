@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_FORECAST_MIN_POINTS = 7
 DEFAULT_MAX_SERIES_POINTS = 2000
+DEFAULT_MAX_PREDICTION_LENGTH = 30
 MINIMUM_SETTING_VALUE = 1
 
 
@@ -32,6 +33,11 @@ class Settings(BaseSettings):
         default=DEFAULT_MAX_SERIES_POINTS,
         ge=MINIMUM_SETTING_VALUE,
         validation_alias="MAX_SERIES_POINTS",
+    )
+    max_prediction_length: int = Field(
+        default=DEFAULT_MAX_PREDICTION_LENGTH,
+        ge=MINIMUM_SETTING_VALUE,
+        validation_alias="MAX_PREDICTION_LENGTH",
     )
 
 
