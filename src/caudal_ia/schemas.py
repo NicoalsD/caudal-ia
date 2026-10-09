@@ -62,3 +62,25 @@ class ForecastResponse(BaseModel):
         max_length=MAX_FORECAST_POINTS,
         description="Puntos pronosticados con sus cuantiles.",
     )
+
+
+class ModelSpecResponse(BaseModel):
+    name: str = Field(description="Nombre del modelo disponible.")
+    version: str = Field(description="Versión del modelo disponible.")
+    loaded: bool = Field(description="Indica si el modelo está cargado en memoria.")
+    quantile_levels: list[float] = Field(
+        description="Niveles de cuantiles que admite el modelo."
+    )
+    max_prediction_length: int = Field(
+        description="Cantidad máxima de días que puede pronosticar el modelo."
+    )
+    parameters_millions: int = Field(
+        description="Cantidad aproximada de parámetros, en millones."
+    )
+
+
+class ModelsResponse(BaseModel):
+    models: list[ModelSpecResponse] = Field(
+        description="Modelos de pronóstico disponibles."
+    )
+    active: str = Field(description="Nombre del modelo activo por defecto.")

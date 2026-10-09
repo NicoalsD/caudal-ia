@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from caudal_ia.config import get_settings
 from caudal_ia.readiness import DEFAULT_MODEL_NAME, ModelReadiness
 from caudal_ia.routes.health import router as health_router
+from caudal_ia.routes.models import router as models_router
 
 settings = get_settings()
 
@@ -14,3 +15,4 @@ app = FastAPI(
 )
 app.state.readiness = ModelReadiness(DEFAULT_MODEL_NAME)
 app.include_router(health_router)
+app.include_router(models_router)
