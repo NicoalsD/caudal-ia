@@ -5,7 +5,12 @@ from pydantic import ValidationError
 
 from caudal_ia.adapters import ForecastResponseAdapter
 from caudal_ia.domain import ForecastPoint, ForecastResult
-from caudal_ia.schemas import ForecastRequest, ForecastResponse, ModelInfo
+from caudal_ia.schemas import (
+    ForecastPointResponse,
+    ForecastRequest,
+    ForecastResponse,
+    ModelInfo,
+)
 
 EXPECTED_LAST_VALUE = 2.10
 
@@ -83,11 +88,11 @@ def test_forecast_response_adapter_maps_domain_result() -> None:
         generated_at=generated_at,
         frequency="D",
         points=[
-            {
-                "timestamp": timestamp,
-                "p10": 1.8,
-                "p50": 2.1,
-                "p90": 2.4,
-            }
+            ForecastPointResponse(
+                timestamp=timestamp,
+                p10=1.8,
+                p50=2.1,
+                p90=2.4,
+            )
         ],
     )
