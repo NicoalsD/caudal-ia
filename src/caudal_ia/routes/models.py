@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 
-from caudal_ia.model_catalog import CHRONOS_MODEL_SPECS
+from caudal_ia.model_registry import ModelRegistry
 from caudal_ia.readiness import DEFAULT_MODEL_NAME
 from caudal_ia.schemas import ModelSpecResponse, ModelsResponse
 
@@ -25,7 +25,7 @@ def get_models(request: Request) -> ModelsResponse:
                 max_prediction_length=spec.max_prediction_length,
                 parameters_millions=spec.parameters_millions,
             )
-            for spec in CHRONOS_MODEL_SPECS
+            for spec in ModelRegistry.get_instance().list_specs()
         ],
         active=DEFAULT_MODEL_NAME,
     )
