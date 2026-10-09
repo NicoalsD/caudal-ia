@@ -1,11 +1,11 @@
 from http import HTTPStatus
-from uuid import uuid4
 
 from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+
+from caudal_ia.errors import MODEL_NOT_READY, RETRY_AFTER_SECONDS, ApiError
 
 router = APIRouter(prefix="/v1")
-RETRY_AFTER_SECONDS = "30"
+MODEL_NOT_READY_MESSAGE = "El modelo aún no está listo para atender solicitudes."
 
 
 @router.get(
@@ -26,20 +26,15 @@ def get_health() -> dict[str, str]:
         HTTPStatus.SERVICE_UNAVAILABLE: {"description": "El modelo no está listo."}
     },
 )
-def get_readiness(request: Request) -> dict[str, str | bool] | JSONResponse:
+def get_readiness(request: Request) -> dict[str, str | bool]:
     readiness = request.app.state.readiness
     if readiness.is_loaded:
         return {"status": "ready", "model_loaded": True}
 
-    return JSONResponse(
-        status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+    raise ApiError(
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        MODEL_NOT_READY,
+        MODEL_NOT_READY_MESSAGE,
+        {"model_name": readiness.model_name},
         headers={"Retry-After": RETRY_AFTER_SECONDS},
-        content={
-            "error": {
-                "code": "MODEL_NOT_READY",
-                "message": "El modelo aún no está listo para atender solicitudes.",
-                "details": {"model_name": readiness.model_name},
-                "request_id": str(uuid4()),
-            }
-        },
     )

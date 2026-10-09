@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 
+from caudal_ia.body_limit import BodyLimitMiddleware
 from caudal_ia.config import get_settings
+from caudal_ia.errors import register_exception_handlers
 from caudal_ia.model_registry import resolve_active_model
 from caudal_ia.readiness import ModelReadiness
+from caudal_ia.routes.forecasts import router as forecasts_router
 from caudal_ia.routes.health import router as health_router
 from caudal_ia.routes.models import router as models_router
 
@@ -15,6 +18,9 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs" if settings.api_docs_enabled else None,
 )
+register_exception_handlers(app)
+app.add_middleware(BodyLimitMiddleware)
 app.state.readiness = ModelReadiness(active_spec.name)
 app.include_router(health_router)
 app.include_router(models_router)
+app.include_router(forecasts_router)
