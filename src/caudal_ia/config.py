@@ -5,6 +5,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_FORECAST_MIN_POINTS = 7
+DEFAULT_CHRONOS_MODEL_ID = "autogluon/chronos-2-small"
 DEFAULT_MAX_SERIES_POINTS = 2000
 DEFAULT_MAX_PREDICTION_LENGTH = 30
 MINIMUM_SETTING_VALUE = 1
@@ -19,6 +20,15 @@ class Settings(BaseSettings):
         populate_by_name=True,
     )
 
+    chronos_model_id: str = Field(
+        default=DEFAULT_CHRONOS_MODEL_ID,
+        min_length=1,
+        validation_alias="CHRONOS_MODEL_ID",
+    )
+    chronos_device: Literal["cpu"] = Field(
+        default="cpu",
+        validation_alias="CHRONOS_DEVICE",
+    )
     api_docs_enabled: bool = Field(default=True, validation_alias="API_DOCS_ENABLED")
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
         default="INFO",

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 
+from caudal_ia.config import get_settings
 from caudal_ia.model_registry import ModelRegistry
-from caudal_ia.readiness import DEFAULT_MODEL_NAME
 from caudal_ia.schemas import ModelSpecResponse, ModelsResponse
 
 router = APIRouter(prefix="/v1")
@@ -14,18 +14,19 @@ router = APIRouter(prefix="/v1")
     description="Lista los modelos disponibles e identifica el modelo activo.",
 )
 def get_models(request: Request) -> ModelsResponse:
+    active_model_name = get_settings().chronos_model_id
     model_loaded = request.app.state.readiness.is_loaded
     return ModelsResponse(
         models=[
             ModelSpecResponse(
                 name=spec.name,
                 version=spec.version,
-                loaded=spec.name == DEFAULT_MODEL_NAME and model_loaded,
+                loaded=spec.name == active_model_name and model_loaded,
                 quantile_levels=list(spec.quantile_levels),
                 max_prediction_length=spec.max_prediction_length,
                 parameters_millions=spec.parameters_millions,
             )
             for spec in ModelRegistry.get_instance().list_specs()
         ],
-        active=DEFAULT_MODEL_NAME,
+        active=active_model_name,
     )

@@ -1,14 +1,16 @@
 from http import HTTPStatus
 
+import pytest
 from fastapi.testclient import TestClient
 
+from caudal_ia.config import DEFAULT_CHRONOS_MODEL_ID, get_settings
 from caudal_ia.main import app
-from caudal_ia.readiness import DEFAULT_MODEL_NAME, ModelReadiness
+from caudal_ia.readiness import ModelReadiness
 
 
 def test_models_route_lists_catalog_and_loaded_state(client: TestClient) -> None:
     previous_readiness = app.state.readiness
-    readiness = ModelReadiness(DEFAULT_MODEL_NAME)
+    readiness = ModelReadiness(DEFAULT_CHRONOS_MODEL_ID)
     app.state.readiness = readiness
 
     try:
@@ -20,7 +22,7 @@ def test_models_route_lists_catalog_and_loaded_state(client: TestClient) -> None
             "autogluon/chronos-2-small",
             "amazon/chronos-bolt-small",
         ]
-        assert payload["active"] == DEFAULT_MODEL_NAME
+        assert payload["active"] == DEFAULT_CHRONOS_MODEL_ID
         assert [model["loaded"] for model in payload["models"]] == [False, False]
 
         readiness.mark_loaded()
@@ -33,3 +35,28 @@ def test_models_route_lists_catalog_and_loaded_state(client: TestClient) -> None
         ]
     finally:
         app.state.readiness = previous_readiness
+
+
+def test_models_route_uses_configured_active_model(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    previous_readiness = app.state.readiness
+
+    try:
+        monkeypatch.setenv("CHRONOS_MODEL_ID", "amazon/chronos-bolt-small")
+        get_settings.cache_clear()
+        readiness = ModelReadiness("amazon/chronos-bolt-small")
+        readiness.mark_loaded()
+        app.state.readiness = readiness
+
+        response = client.get("/v1/models")
+
+        assert response.status_code == HTTPStatus.OK
+        payload = response.json()
+        assert payload["active"] == "amazon/chronos-bolt-small"
+        assert [model["loaded"] for model in payload["models"]] == [False, True]
+    finally:
+        app.state.readiness = previous_readiness
+        monkeypatch.undo()
+        get_settings.cache_clear()

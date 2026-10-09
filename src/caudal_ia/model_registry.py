@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from caudal_ia.config import Settings
 from caudal_ia.model_catalog import CHRONOS_MODEL_SPECS, ModelSpec
 
 
@@ -56,3 +57,8 @@ class ModelRegistry:
     def list_specs(self) -> tuple[ModelSpec, ...]:
         """Return registered specifications in registration order."""
         return tuple(self._specs.values())
+
+
+def resolve_active_model(settings: Settings) -> ModelSpec:
+    """Resolve the configured model, failing if it is not registered."""
+    return ModelRegistry.get_instance().get_spec(settings.chronos_model_id)

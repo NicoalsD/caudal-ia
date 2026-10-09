@@ -2,8 +2,9 @@ from http import HTTPStatus
 
 from fastapi.testclient import TestClient
 
+from caudal_ia.config import DEFAULT_CHRONOS_MODEL_ID
 from caudal_ia.main import app
-from caudal_ia.readiness import DEFAULT_MODEL_NAME, ModelReadiness
+from caudal_ia.readiness import ModelReadiness
 
 
 def test_health_returns_ok_without_authentication(client: TestClient) -> None:
@@ -15,7 +16,7 @@ def test_health_returns_ok_without_authentication(client: TestClient) -> None:
 
 def test_readiness_reflects_model_load_state(client: TestClient) -> None:
     previous_readiness = app.state.readiness
-    readiness = ModelReadiness(DEFAULT_MODEL_NAME)
+    readiness = ModelReadiness(DEFAULT_CHRONOS_MODEL_ID)
     app.state.readiness = readiness
 
     try:
