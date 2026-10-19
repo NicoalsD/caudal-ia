@@ -9,6 +9,10 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from caudal_ia.config import get_settings  # noqa: E402
 from caudal_ia.main import app  # noqa: E402
+from tests.fakes import FakeForecasterCreator  # noqa: E402
+
+# Tests never download Chronos weights: the lifespan loads a deterministic fake.
+app.state.forecaster_creator = FakeForecasterCreator()
 
 AUTHORIZATION_HEADERS = {"Authorization": f"Bearer {TEST_SERVICE_TOKEN}"}
 
