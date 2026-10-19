@@ -8,6 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 DEFAULT_FORECAST_MIN_POINTS = 7
 DEFAULT_CHRONOS_MODEL_ID = "autogluon/chronos-2-small"
 DEFAULT_SERIES_TIMEZONE = "America/Bogota"
+DEFAULT_FORECAST_CACHE_SIZE = 64
+DEFAULT_FORECAST_CACHE_TTL_SECONDS = 300
 DEFAULT_MAX_SERIES_POINTS = 2000
 DEFAULT_MAX_PREDICTION_LENGTH = 30
 DEFAULT_MAX_BODY_KIBIBYTES = 256
@@ -65,6 +67,16 @@ class Settings(BaseSettings):
     resample_aggregation: Literal["last", "mean"] = Field(
         default="last",
         validation_alias="RESAMPLE_AGGREGATION",
+    )
+    forecast_cache_size: int = Field(
+        default=DEFAULT_FORECAST_CACHE_SIZE,
+        ge=0,
+        validation_alias="FORECAST_CACHE_SIZE",
+    )
+    forecast_cache_ttl_seconds: int = Field(
+        default=DEFAULT_FORECAST_CACHE_TTL_SECONDS,
+        ge=MINIMUM_SETTING_VALUE,
+        validation_alias="FORECAST_CACHE_TTL_SECONDS",
     )
     series_timezone: str = Field(
         default=DEFAULT_SERIES_TIMEZONE,
