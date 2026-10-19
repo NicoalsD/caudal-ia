@@ -1,7 +1,8 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
+from caudal_ia.auth import require_service_token
 from caudal_ia.config import get_settings
 from caudal_ia.errors import (
     INTERNAL_ERROR,
@@ -16,7 +17,7 @@ from caudal_ia.request_validation import (
 from caudal_ia.schemas import ForecastRequest
 from caudal_ia.series_validation import validate_series
 
-router = APIRouter(prefix="/v1")
+router = APIRouter(prefix="/v1", dependencies=[Depends(require_service_token)])
 
 MODEL_NOT_READY_MESSAGE = "El modelo aún no está listo para atender solicitudes."
 INFERENCE_NOT_IMPLEMENTED_MESSAGE = "La inferencia aún no está implementada."
@@ -29,6 +30,9 @@ INFERENCE_NOT_IMPLEMENTED_MESSAGE = "La inferencia aún no está implementada."
     response_model=None,
     responses={
         HTTPStatus.BAD_REQUEST: {"description": "La petición no cumple el contrato."},
+        HTTPStatus.UNAUTHORIZED: {
+            "description": "Falta el token de servicio o no es válido."
+        },
         HTTPStatus.REQUEST_ENTITY_TOO_LARGE: {
             "description": "El cuerpo supera el límite."
         },

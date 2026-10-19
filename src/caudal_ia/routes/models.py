@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
+from caudal_ia.auth import require_service_token
 from caudal_ia.config import get_settings
 from caudal_ia.model_registry import ModelRegistry
 from caudal_ia.schemas import ModelSpecResponse, ModelsResponse
 
-router = APIRouter(prefix="/v1")
+router = APIRouter(prefix="/v1", dependencies=[Depends(require_service_token)])
 
 
 @router.get(

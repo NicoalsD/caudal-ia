@@ -1,17 +1,23 @@
+import os
 from collections.abc import Generator
 
-import pytest
-from fastapi.testclient import TestClient
+TEST_SERVICE_TOKEN = "test-service-token-with-at-least-32-bytes"
+os.environ.setdefault("IA_SERVICE_TOKEN", TEST_SERVICE_TOKEN)
 
-from caudal_ia.config import get_settings
-from caudal_ia.main import app
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from caudal_ia.config import get_settings  # noqa: E402
+from caudal_ia.main import app  # noqa: E402
+
+AUTHORIZATION_HEADERS = {"Authorization": f"Bearer {TEST_SERVICE_TOKEN}"}
 
 
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
     get_settings.cache_clear()
     try:
-        with TestClient(app) as test_client:
+        with TestClient(app, headers=AUTHORIZATION_HEADERS) as test_client:
             yield test_client
     finally:
         get_settings.cache_clear()
