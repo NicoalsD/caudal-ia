@@ -1,0 +1,37 @@
+name: Seguridad IA
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Cada lunes a las 06:00 UTC, aunque no haya cambios en el repositorio.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.15"
+
+      - name: Exporta dependencias bloqueadas con hashes
+        # El proyecto no se exporta (-e .) porque pip-audit no admite hashes en un
+        # paquete local. El sufijo +cpu identifica la compilación de PyTorch para
+        # CPU; PyPI publica la misma versión sin ese sufijo.
+        run: |
+          uv export --frozen --no-dev --no-emit-project --format requirements-txt > requirements.txt
+          sed -E 's/(==[^ \\]+)\+cpu/\1/' requirements.txt > requirements-audit.txt
+
+      - name: Busca vulnerabilidades conocidas (pip-audit)
+        run: |
+          uvx pip-audit==2.10.1 \
+            -r requirements-audit.txt \
+            --disable-pip \
+            --require-hashes \
+            --strict
