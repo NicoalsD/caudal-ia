@@ -1,0 +1,58 @@
+name: Memoria IA
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_id:
+        description: Modelo Chronos a medir
+        required: false
+        default: autogluon/chronos-2-small
+        type: string
+  schedule:
+    # Cada lunes a las 07:00 UTC.
+    - cron: "0 7 * * 1"
+  pull_request:
+    paths:
+      - pyproject.toml
+      - uv.lock
+      - src/caudal_ia/forecasting/**
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MODEL_ID: ${{ inputs.model_id || 'autogluon/chronos-2-small' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.15"
+          enable-cache: true
+
+      - name: Cachea los pesos de Hugging Face
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ env.MODEL_ID }}-${{ hashFiles('uv.lock') }}
+
+      - name: Instala dependencias
+        run: uv sync --locked
+
+      - name: Mide memoria y latencia del modelo
+        # El script sale con código 1 si el pico supera MEMORY_LIMIT_MB; shell: bash
+        # activa pipefail para que tee no oculte ese código.
+        shell: bash
+        run: uv run python scripts/measure_memory.py --model-id "$MODEL_ID" | tee memory-report.json
+
+      - name: Guarda el informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-report
+          path: memory-report.json
+          if-no-files-found: ignore
