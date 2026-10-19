@@ -61,7 +61,7 @@ Las pruebas nunca descargan pesos: `tests/conftest.py` carga un pronosticador de
 
 ## 5. Estado y pendientes
 
-**Fases 1, 2, 3, 6 y 10 implementadas** (I001 a I041): contrato, validación, token de servicio rotable, pronóstico con Chronos y backtest offline. Pendiente: despliegue (Fase 12, I042 a I045). Mapa del código:
+**Fases 1, 2, 3, 6, 10 y 12 implementadas** (I001 a I045): contrato, validación, token de servicio rotable, pronóstico con Chronos, backtest offline e imagen Docker para Hugging Face Spaces. Pendiente: publicar el Space y configurar el backend ([guía](.agents/deployment.md)). Mapa del código:
 
 | Módulo | Contenido |
 |---|---|
@@ -83,7 +83,7 @@ Guías operativas de `.agents/` pendientes:
 - [ ] `.agents/datasets.md`
 - [ ] `.agents/configuration.md`
 - [ ] `.agents/testing-plan.md`
-- [ ] `.agents/deployment.md`
+- [x] `.agents/deployment.md`
 - [ ] `.agents/security.md`
 - [ ] `.agents/api-contract.md`
 

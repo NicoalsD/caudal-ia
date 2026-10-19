@@ -1,0 +1,25 @@
+# Todo lo que no entra en la imagen. Los secretos nunca se copian: el token llega
+# como secreto del Space o de la variable del hosting.
+.git
+.github
+.agents
+.githooks
+.venv
+.env
+.env.*
+!.env.example
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+tests
+scripts
+docs
+*.md
+*.log
+logs
+models
+data

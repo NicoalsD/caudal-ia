@@ -4,7 +4,7 @@ Servicio de pronóstico del nivel del tanque a 1 a 3 días con **Chronos** (cuan
 
 ## Estado
 
-**Fase 6: pronóstico con Chronos.** `POST /v1/forecasts` re-muestrea la serie a un valor por día en `America/Bogota`, la envía a Chronos (por defecto `autogluon/chronos-2-small`, en CPU) y devuelve `p10`, `p50` y `p90` de los días siguientes. Protegido con token de servicio rotable. Especificación: [Módulo de IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Modulo-IA.md) y [Contrato backend-IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Contrato-IA.md). El backtest offline (Fase 10) compara Chronos con la estimación simple: [guía](.agents/evaluation.md). Pendiente: despliegue (Fase 12).
+**Fase 6: pronóstico con Chronos.** `POST /v1/forecasts` re-muestrea la serie a un valor por día en `America/Bogota`, la envía a Chronos (por defecto `autogluon/chronos-2-small`, en CPU) y devuelve `p10`, `p50` y `p90` de los días siguientes. Protegido con token de servicio rotable. Especificación: [Módulo de IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Modulo-IA.md) y [Contrato backend-IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Contrato-IA.md). El backtest offline (Fase 10) compara Chronos con la estimación simple: [guía](.agents/evaluation.md). La imagen Docker para Hugging Face Spaces (Fase 12) está lista; falta publicarla.
 
 ## Uso local
 
@@ -18,6 +18,19 @@ uv run python -m caudal_ia.evaluation --input serie.json --output resultado.json
 ```
 
 `GET /v1/health` responde de inmediato; `GET /v1/ready` queda en `503` hasta que el modelo termina de cargar en segundo plano.
+
+## Despliegue
+
+Imagen Docker (CPU, sin CUDA) con los pesos de Chronos ya descargados, usuario 1000 y puerto `PORT` (7860 por defecto):
+
+```bash
+docker build -t caudal-ia .
+docker run --rm -p 7860:7860 -e IA_SERVICE_TOKEN=<token-de-32-bytes-o-mas> caudal-ia
+```
+
+Hugging Face Spaces (SDK Docker) y Render, con secretos, variables, rotación del token y la configuración del backend: [.agents/deployment.md](.agents/deployment.md).
+
+Memoria y latencia medidas en CPU de escritorio (RSS pico de 503 MB con `autogluon/chronos-2-small` y 577 MB con `amazon/chronos-bolt-small`): [sección 5](.agents/deployment.md#5-mediciones-modulo-ia-sección-121). Repetir con `uv run python scripts/measure_memory.py`.
 
 ## Documentación
 
