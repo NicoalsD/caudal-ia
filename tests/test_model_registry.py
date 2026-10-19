@@ -1,5 +1,3 @@
-from collections.abc import Iterator
-
 import pytest
 
 from caudal_ia.model_catalog import (
@@ -18,10 +16,8 @@ TEST_MODEL_NAME = "test/model"
 
 
 @pytest.fixture(autouse=True)
-def reset_model_registry() -> Iterator[None]:
-    ModelRegistry.reset_instance()
-    yield
-    ModelRegistry.reset_instance()
+def reset_model_registry(fresh_model_registry: None) -> None:
+    del fresh_model_registry
 
 
 def test_get_instance_returns_the_same_object() -> None:

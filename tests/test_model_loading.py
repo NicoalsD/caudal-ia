@@ -1,5 +1,3 @@
-from collections.abc import Iterator
-
 import pytest
 
 from caudal_ia.config import get_settings
@@ -16,10 +14,8 @@ LOAD_TIMEOUT_SECONDS = 5.0
 
 
 @pytest.fixture(autouse=True)
-def reset_model_registry() -> Iterator[None]:
-    ModelRegistry.reset_instance()
-    yield
-    ModelRegistry.reset_instance()
+def reset_model_registry(fresh_model_registry: None) -> None:
+    del fresh_model_registry
 
 
 def test_registry_loads_each_model_only_once() -> None:
