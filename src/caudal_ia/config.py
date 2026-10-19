@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_FORECAST_MIN_POINTS = 7
@@ -12,6 +12,8 @@ DEFAULT_MAX_BODY_KIBIBYTES = 256
 KIBIBYTE = 1024
 DEFAULT_MAX_BODY_BYTES = DEFAULT_MAX_BODY_KIBIBYTES * KIBIBYTE
 MINIMUM_SETTING_VALUE = 1
+MIN_SERVICE_TOKEN_BYTES = 32
+TOKEN_ENCODING = "utf-8"
 
 
 class Settings(BaseSettings):
@@ -23,6 +25,7 @@ class Settings(BaseSettings):
         populate_by_name=True,
     )
 
+    ia_service_token: SecretStr = Field(validation_alias="IA_SERVICE_TOKEN")
     chronos_model_id: str = Field(
         default=DEFAULT_CHRONOS_MODEL_ID,
         min_length=1,
@@ -57,6 +60,18 @@ class Settings(BaseSettings):
         ge=MINIMUM_SETTING_VALUE,
         validation_alias="MAX_BODY_BYTES",
     )
+
+    @field_validator("ia_service_token")
+    @classmethod
+    def require_strong_token(cls, token: SecretStr) -> SecretStr:
+        """Reject service tokens shorter than the minimum length in bytes."""
+        if (
+            len(token.get_secret_value().encode(TOKEN_ENCODING))
+            < MIN_SERVICE_TOKEN_BYTES
+        ):
+            minimum = MIN_SERVICE_TOKEN_BYTES
+            raise ValueError(f"El token de servicio necesita al menos {minimum} bytes.")
+        return token
 
 
 @lru_cache
