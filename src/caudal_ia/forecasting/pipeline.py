@@ -62,22 +62,33 @@ class ForecastPipeline(ABC):
 
 
 class ServingForecastPipeline(ForecastPipeline):
-    """Pipeline behind ``POST /v1/forecasts``: stateless, one series per call."""
+    """Pipeline behind ``POST /v1/forecasts``: stateless, one series per call.
+
+    The forecaster is resolved after preprocessing, so a series with too little
+    history gets ``INSUFFICIENT_HISTORY`` even while the model is still loading.
+    """
 
     def __init__(
         self,
-        forecaster: Forecaster,
+        forecaster_provider: Callable[[], Forecaster],
         settings: Settings,
         clock: Callable[[], datetime] = utc_now,
     ) -> None:
-        self._forecaster = forecaster
+        self._forecaster_provider = forecaster_provider
+        self._forecaster: Forecaster | None = None
         self._settings = settings
         self._clock = clock
+
+    @property
+    def forecaster(self) -> Forecaster:
+        if self._forecaster is None:
+            self._forecaster = self._forecaster_provider()
+        return self._forecaster
 
     def model_version(self) -> str:
         """Model version plus the daily aggregation, which also changes results."""
         return (
-            f"{self._forecaster.version}{VERSION_SEPARATOR}"
+            f"{self.forecaster.version}{VERSION_SEPARATOR}"
             f"{self._settings.resample_aggregation}"
         )
 
@@ -92,7 +103,7 @@ class ServingForecastPipeline(ForecastPipeline):
         return series
 
     def infer(self, series: DailySeries, request: ForecastInput) -> QuantileForecast:
-        return self._forecaster.predict_quantiles(
+        return self.forecaster.predict_quantiles(
             series.values,
             request.prediction_length,
             request.quantile_levels,
@@ -106,7 +117,7 @@ class ServingForecastPipeline(ForecastPipeline):
     ) -> ForecastResult:
         first_day = series.last_day + ONE_DAY
         result = ForecastResult(
-            model_name=self._forecaster.name,
+            model_name=self.forecaster.name,
             model_version=self.model_version(),
             generated_at=self._clock(),
             notes=describe_gaps(series),

@@ -10,6 +10,7 @@ from caudal_ia.errors import (
     RETRY_AFTER_SECONDS,
     ApiError,
 )
+from caudal_ia.forecasting.forecaster import Forecaster
 from caudal_ia.forecasting.pipeline import ForecastInput, ServingForecastPipeline
 from caudal_ia.model_registry import ModelNotLoadedError, ModelRegistry
 from caudal_ia.request_validation import (
@@ -60,20 +61,22 @@ def create_forecast(
     validate_series(forecast_request.timestamps, forecast_request.values, settings)
 
     readiness = request.app.state.readiness
-    try:
-        if not readiness.is_loaded:
-            raise ModelNotLoadedError(readiness.model_name)
-        forecaster = ModelRegistry.get_instance().get_forecaster(readiness.model_name)
-    except ModelNotLoadedError as error:
-        raise ApiError(
-            HTTPStatus.SERVICE_UNAVAILABLE,
-            MODEL_NOT_READY,
-            MODEL_NOT_READY_MESSAGE,
-            {"model_name": readiness.model_name},
-            headers={"Retry-After": RETRY_AFTER_SECONDS},
-        ) from error
 
-    pipeline = ServingForecastPipeline(forecaster, settings)
+    def active_forecaster() -> Forecaster:
+        try:
+            if not readiness.is_loaded:
+                raise ModelNotLoadedError(readiness.model_name)
+            return ModelRegistry.get_instance().get_forecaster(readiness.model_name)
+        except ModelNotLoadedError as error:
+            raise ApiError(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                MODEL_NOT_READY,
+                MODEL_NOT_READY_MESSAGE,
+                {"model_name": readiness.model_name},
+                headers={"Retry-After": RETRY_AFTER_SECONDS},
+            ) from error
+
+    pipeline = ServingForecastPipeline(active_forecaster, settings)
     result = pipeline.run(
         ForecastInput(
             timestamps=forecast_request.timestamps,

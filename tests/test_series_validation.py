@@ -9,7 +9,6 @@ from caudal_ia.series_validation import (
     TIMESTAMP_PARSE_ERROR,
     TIMESTAMPS_NOT_INCREASING,
     TOO_MANY_POINTS,
-    InsufficientHistoryError,
     SeriesValidationError,
     validate_series,
 )
@@ -142,25 +141,3 @@ def test_maximum_allowed_series_length_passes() -> None:
         [float(index) for index in range(TEST_MAX_SERIES_POINTS)],
         make_settings(),
     )
-
-
-def test_minimum_history_length_passes() -> None:
-    validate_series(
-        make_timestamps(TEST_FORECAST_MIN_POINTS),
-        [float(index) for index in range(TEST_FORECAST_MIN_POINTS)],
-        make_settings(),
-    )
-
-
-def test_one_point_below_minimum_raises_insufficient_history() -> None:
-    received = TEST_FORECAST_MIN_POINTS - ONE_FEWER_POINT
-
-    with pytest.raises(InsufficientHistoryError) as error:
-        validate_series(
-            make_timestamps(received),
-            [float(index) for index in range(received)],
-            make_settings(),
-        )
-
-    assert error.value.received == received
-    assert error.value.minimum == TEST_FORECAST_MIN_POINTS

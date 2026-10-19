@@ -38,7 +38,8 @@ class InsufficientHistoryError(Exception):
         self.received = received
         self.minimum = minimum
         super().__init__(
-            f"La serie tiene {received} puntos; se requieren al menos {minimum}."
+            f"La serie tiene {received} días con lectura; se requieren al menos "
+            f"{minimum}."
         )
 
 
@@ -71,9 +72,3 @@ def validate_series(
     for index, value in enumerate(values):
         if not math.isfinite(value):
             raise SeriesValidationError(NOT_FINITE_VALUE, index)
-
-    if len(values) < settings.forecast_min_points:
-        raise InsufficientHistoryError(
-            received=len(values),
-            minimum=settings.forecast_min_points,
-        )
