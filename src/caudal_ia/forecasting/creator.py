@@ -5,6 +5,7 @@ from chronos import BaseChronosPipeline
 
 from caudal_ia.config import Settings
 from caudal_ia.forecasting.chronos_adapter import ChronosForecasterAdapter
+from caudal_ia.forecasting.decorators import TimingForecaster
 from caudal_ia.forecasting.forecaster import Forecaster
 from caudal_ia.model_catalog import ModelSpec
 
@@ -22,7 +23,9 @@ class ForecasterCreator(ABC):
 
     def create(self, spec: ModelSpec, settings: Settings) -> Forecaster:
         logger.info("Loading forecaster model=%s", spec.name)
-        forecaster = self.create_forecaster(spec, settings)
+        forecaster: Forecaster = TimingForecaster(
+            self.create_forecaster(spec, settings)
+        )
         logger.info("Forecaster ready model=%s", forecaster.name)
         return forecaster
 
