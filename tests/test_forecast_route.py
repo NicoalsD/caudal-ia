@@ -55,7 +55,7 @@ def test_contract_example_returns_one_point(ready_client: TestClient) -> None:
     assert body["frequency"] == "D"
     assert body["model"]["name"] == get_settings().chronos_model_id
     assert body["model"]["version"].endswith("+last")
-    assert "notes" not in body["model"] or body["model"]["notes"] is None
+    assert "notes" not in body["model"]
     assert datetime.fromisoformat(body["generated_at"]).tzinfo is not None
     assert_contract_points(body, date(2026, 10, 9), 1)
 

@@ -35,6 +35,7 @@ response_adapter = ForecastResponseAdapter()
         "No guarda la serie ni el pronóstico."
     ),
     response_model=ForecastResponse,
+    response_model_exclude_none=True,
     responses={
         HTTPStatus.BAD_REQUEST: {"description": "La petición no cumple el contrato."},
         HTTPStatus.UNAUTHORIZED: {
