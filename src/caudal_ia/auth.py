@@ -23,15 +23,18 @@ def require_service_token(
         HTTPAuthorizationCredentials | None, Security(bearer_scheme)
     ],
 ) -> None:
-    """Allow the request only when it carries the configured service token."""
+    """Allow the request only when it carries a current or previous token."""
     if credentials is None or credentials.scheme.lower() != BEARER_SCHEME:
         raise _unauthorized()
 
-    expected = get_settings().ia_service_token.get_secret_value()
-    if not hmac.compare_digest(
-        credentials.credentials.encode(TOKEN_ENCODING),
-        expected.encode(TOKEN_ENCODING),
-    ):
+    provided = credentials.credentials.encode(TOKEN_ENCODING)
+    # Compare against every accepted token before deciding, so the response time
+    # does not reveal which token matched.
+    matches = [
+        hmac.compare_digest(provided, token.get_secret_value().encode(TOKEN_ENCODING))
+        for token in get_settings().accepted_service_tokens()
+    ]
+    if not any(matches):
         raise _unauthorized()
 
 

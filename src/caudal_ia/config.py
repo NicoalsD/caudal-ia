@@ -23,9 +23,14 @@ class Settings(BaseSettings):
         env_file=".env",
         case_sensitive=False,
         populate_by_name=True,
+        env_ignore_empty=True,
     )
 
     ia_service_token: SecretStr = Field(validation_alias="IA_SERVICE_TOKEN")
+    ia_service_token_previous: SecretStr | None = Field(
+        default=None,
+        validation_alias="IA_SERVICE_TOKEN_PREVIOUS",
+    )
     chronos_model_id: str = Field(
         default=DEFAULT_CHRONOS_MODEL_ID,
         min_length=1,
@@ -61,17 +66,23 @@ class Settings(BaseSettings):
         validation_alias="MAX_BODY_BYTES",
     )
 
-    @field_validator("ia_service_token")
+    @field_validator("ia_service_token", "ia_service_token_previous")
     @classmethod
-    def require_strong_token(cls, token: SecretStr) -> SecretStr:
+    def require_strong_token(cls, token: SecretStr | None) -> SecretStr | None:
         """Reject service tokens shorter than the minimum length in bytes."""
-        if (
+        if token is not None and (
             len(token.get_secret_value().encode(TOKEN_ENCODING))
             < MIN_SERVICE_TOKEN_BYTES
         ):
             minimum = MIN_SERVICE_TOKEN_BYTES
             raise ValueError(f"El token de servicio necesita al menos {minimum} bytes.")
         return token
+
+    def accepted_service_tokens(self) -> tuple[SecretStr, ...]:
+        """Return the current token and, during a rotation, the previous one."""
+        if self.ia_service_token_previous is None:
+            return (self.ia_service_token,)
+        return (self.ia_service_token, self.ia_service_token_previous)
 
 
 @lru_cache
