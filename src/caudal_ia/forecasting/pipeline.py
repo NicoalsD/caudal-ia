@@ -14,6 +14,7 @@ from caudal_ia.forecasting.preprocessing import (
     require_minimum_history,
 )
 from caudal_ia.forecasting.quantiles import to_forecast_points
+from caudal_ia.forecasting.result_validation import validate_result
 
 ONE_DAY = timedelta(days=1)
 
@@ -95,13 +96,15 @@ class ServingForecastPipeline(ForecastPipeline):
         forecast: QuantileForecast,
         request: ForecastInput,
     ) -> ForecastResult:
-        del request
-        return ForecastResult(
+        first_day = series.last_day + ONE_DAY
+        result = ForecastResult(
             model_name=self._forecaster.name,
             model_version=self._forecaster.version,
             generated_at=self._clock(),
             notes=describe_gaps(series),
-            points=to_forecast_points(
-                forecast, series.last_day + ONE_DAY, self._settings.zone
-            ),
+            points=to_forecast_points(forecast, first_day, self._settings.zone),
         )
+        validate_result(
+            result, first_day, request.prediction_length, self._settings.zone
+        )
+        return result
