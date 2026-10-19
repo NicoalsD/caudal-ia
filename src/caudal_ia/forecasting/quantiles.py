@@ -14,16 +14,13 @@ CONTRACT_QUANTILE_LEVELS = (P10_LEVEL, P50_LEVEL, P90_LEVEL)
 ONE_DAY = timedelta(days=1)
 
 
-def to_forecast_points(
+def ordered_contract_quantiles(
     forecast: QuantileForecast,
-    first_day: date,
-    timezone: ZoneInfo,
-) -> tuple[ForecastPoint, ...]:
-    """Turn model quantiles into p10, p50 and p90 points at local midnight.
+) -> tuple[tuple[float, float, float], ...]:
+    """Return ``(p10, p50, p90)`` for each step, sorted when the model crossed them.
 
-    Step ``n`` is the day ``first_day + n``. If the model crosses its quantiles,
-    they are sorted so that ``p10 <= p50 <= p90`` and the fix is logged without
-    the values.
+    If the model crosses its quantiles, the values are sorted so that
+    ``p10 <= p50 <= p90`` and the fix is logged without the values.
     """
     try:
         positions = [
@@ -34,12 +31,27 @@ def to_forecast_points(
             "The model did not return p10, p50 and p90."
         ) from error
 
-    points: list[ForecastPoint] = []
+    ordered: list[tuple[float, float, float]] = []
     for step, quantiles in enumerate(forecast.steps):
         selected = [quantiles[position] for position in positions]
         p10, p50, p90 = sorted(selected)
         if [p10, p50, p90] != selected:
             logger.warning("Crossed quantiles reordered step=%d", step)
+        ordered.append((p10, p50, p90))
+    return tuple(ordered)
+
+
+def to_forecast_points(
+    forecast: QuantileForecast,
+    first_day: date,
+    timezone: ZoneInfo,
+) -> tuple[ForecastPoint, ...]:
+    """Turn model quantiles into p10, p50 and p90 points at local midnight.
+
+    Step ``n`` is the day ``first_day + n``.
+    """
+    points: list[ForecastPoint] = []
+    for step, (p10, p50, p90) in enumerate(ordered_contract_quantiles(forecast)):
         day = first_day + step * ONE_DAY
         points.append(
             ForecastPoint(

@@ -61,7 +61,7 @@ Las pruebas nunca descargan pesos: `tests/conftest.py` carga un pronosticador de
 
 ## 5. Estado y pendientes
 
-**Fases 1, 2, 3 y 6 implementadas** (I001 a I033): contrato, validación, token de servicio rotable y pronóstico con Chronos. Pendientes: backtest y evaluación (Fase 10, I034 a I041) y despliegue (Fase 12, I042 a I045). Mapa del código:
+**Fases 1, 2, 3, 6 y 10 implementadas** (I001 a I041): contrato, validación, token de servicio rotable, pronóstico con Chronos y backtest offline. Pendiente: despliegue (Fase 12, I042 a I045). Mapa del código:
 
 | Módulo | Contenido |
 |---|---|
@@ -72,13 +72,14 @@ Las pruebas nunca descargan pesos: `tests/conftest.py` carga un pronosticador de
 | `forecasting/pipeline.py` | `ForecastPipeline` y `ServingForecastPipeline` |
 | `forecasting/chronos_adapter.py`, `creator.py`, `decorators.py` | Adapter, Factory Method y Decorators de Chronos |
 | `model_registry.py`, `model_loading.py` | Singleton con el modelo cargado en segundo plano |
+| `evaluation/` | Backtest offline: ventanas, métricas, persistencia, informe y CLI |
 
 Guías operativas de `.agents/` pendientes:
 
 - [ ] `.agents/architecture.md`
 - [ ] `.agents/design-patterns.md`
 - [ ] `.agents/forecasting.md`
-- [ ] `.agents/evaluation.md`
+- [x] `.agents/evaluation.md`
 - [ ] `.agents/datasets.md`
 - [ ] `.agents/configuration.md`
 - [ ] `.agents/testing-plan.md`

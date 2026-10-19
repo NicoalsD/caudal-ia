@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_FORECAST_MIN_POINTS = 7
@@ -15,6 +15,9 @@ DEFAULT_MAX_PREDICTION_LENGTH = 30
 DEFAULT_MAX_BODY_KIBIBYTES = 256
 KIBIBYTE = 1024
 DEFAULT_MAX_BODY_BYTES = DEFAULT_MAX_BODY_KIBIBYTES * KIBIBYTE
+DEFAULT_BACKTEST_MIN_EVALUATIONS = 30
+DEFAULT_BACKTEST_COVERAGE_MIN = 0.7
+DEFAULT_BACKTEST_COVERAGE_MAX = 0.9
 MINIMUM_SETTING_VALUE = 1
 MIN_SERVICE_TOKEN_BYTES = 32
 TOKEN_ENCODING = "utf-8"
@@ -87,6 +90,33 @@ class Settings(BaseSettings):
         ge=MINIMUM_SETTING_VALUE,
         validation_alias="MAX_BODY_BYTES",
     )
+
+    backtest_min_evaluations: int = Field(
+        default=DEFAULT_BACKTEST_MIN_EVALUATIONS,
+        ge=MINIMUM_SETTING_VALUE,
+        validation_alias="BACKTEST_MIN_EVALUATIONS",
+    )
+    backtest_coverage_min: float = Field(
+        default=DEFAULT_BACKTEST_COVERAGE_MIN,
+        ge=0.0,
+        le=1.0,
+        validation_alias="BACKTEST_COVERAGE_MIN",
+    )
+    backtest_coverage_max: float = Field(
+        default=DEFAULT_BACKTEST_COVERAGE_MAX,
+        ge=0.0,
+        le=1.0,
+        validation_alias="BACKTEST_COVERAGE_MAX",
+    )
+
+    @model_validator(mode="after")
+    def require_ordered_coverage_band(self) -> "Settings":
+        """Reject a coverage band whose lower bound is above its upper bound."""
+        if self.backtest_coverage_min > self.backtest_coverage_max:
+            raise ValueError(
+                "BACKTEST_COVERAGE_MIN no puede ser mayor que BACKTEST_COVERAGE_MAX."
+            )
+        return self
 
     @field_validator("ia_service_token", "ia_service_token_previous")
     @classmethod
