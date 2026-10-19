@@ -4,7 +4,19 @@ Servicio de pronóstico del nivel del tanque a 1 a 3 días con **Chronos** (cuan
 
 ## Estado
 
-**Fase 0: planeación.** La especificación está en el backend: [Módulo de IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Modulo-IA.md) y [Contrato backend-IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Contrato-IA.md). La implementación queda a cargo de Nicolas Mora (`nicomora70`) cuando se una al proyecto.
+**Fase 6: pronóstico con Chronos.** `POST /v1/forecasts` re-muestrea la serie a un valor por día en `America/Bogota`, la envía a Chronos (por defecto `autogluon/chronos-2-small`, en CPU) y devuelve `p10`, `p50` y `p90` de los días siguientes. Protegido con token de servicio rotable. Especificación: [Módulo de IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Modulo-IA.md) y [Contrato backend-IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Contrato-IA.md). Pendiente: backtest (Fase 10) y despliegue (Fase 12).
+
+## Uso local
+
+```bash
+uv sync
+cp .env.example .env    # y pon un IA_SERVICE_TOKEN de al menos 32 bytes
+uv run uvicorn caudal_ia.main:app --reload     # http://localhost:8000/docs
+uv run pytest && uv run ruff check . && uv run mypy .
+uv run pytest -m chronos   # prueba de humo con los pesos reales (los descarga)
+```
+
+`GET /v1/health` responde de inmediato; `GET /v1/ready` queda en `503` hasta que el modelo termina de cargar en segundo plano.
 
 ## Documentación
 
