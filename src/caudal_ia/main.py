@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -15,6 +16,10 @@ from caudal_ia.routes.health import router as health_router
 from caudal_ia.routes.models import router as models_router
 
 settings = get_settings()
+logging.basicConfig(
+    level=settings.log_level,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 active_spec = resolve_active_model(settings)
 
 
