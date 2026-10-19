@@ -12,14 +12,16 @@ WQL_LEVELS = (P10_LEVEL, P50_LEVEL, P90_LEVEL)
 class HorizonMetrics:
     """Metrics of one horizon ``h`` (days ahead). Targets that are NaN are skipped.
 
-    ``mae`` is ``None`` when there is nothing to evaluate; ``wql`` is also ``None``
-    when the sum of the absolute targets is zero.
+    ``mae``, ``coverage`` and ``mean_width`` are ``None`` when there is nothing to
+    evaluate; ``wql`` is also ``None`` when the sum of the absolute targets is zero.
     """
 
     horizon: int
     evaluated: int
     mae: float | None
     wql: float | None
+    coverage: float | None
+    mean_width: float | None
 
 
 @dataclass(frozen=True)
@@ -56,6 +58,21 @@ def mean_absolute_error(points: list[EvaluatedPoint]) -> float | None:
     if not points:
         return None
     return sum(abs(point.target - point.p50) for point in points) / len(points)
+
+
+def coverage(points: list[EvaluatedPoint]) -> float | None:
+    """Fraction of targets inside ``[p10, p90]``; the bounds count as inside."""
+    if not points:
+        return None
+    inside = sum(1 for point in points if point.p10 <= point.target <= point.p90)
+    return inside / len(points)
+
+
+def mean_width(points: list[EvaluatedPoint]) -> float | None:
+    """Average width of the ``[p10, p90]`` band."""
+    if not points:
+        return None
+    return sum(point.p90 - point.p10 for point in points) / len(points)
 
 
 def weighted_quantile_loss(points: list[EvaluatedPoint]) -> float | None:
@@ -95,6 +112,8 @@ def horizon_metrics(result: BacktestResult) -> tuple[HorizonMetrics, ...]:
                 evaluated=len(points),
                 mae=mean_absolute_error(points),
                 wql=weighted_quantile_loss(points),
+                coverage=coverage(points),
+                mean_width=mean_width(points),
             )
         )
     return tuple(metrics)

@@ -17,6 +17,8 @@ EXPECTED_WQL_H2 = 0.032
 EXPECTED_MAE_H1 = 1.5
 EXPECTED_MAE_H2 = 1.5
 EXPECTED_EVALUATED = 2
+EXPECTED_COVERAGE_PARTIAL = 0.5
+EXPECTED_WIDTH_H1 = 2.5
 
 
 def window(
@@ -99,5 +101,37 @@ def test_horizon_without_finite_targets_has_no_metrics() -> None:
 
     metrics = by_horizon(empty)
 
-    assert metrics[1] == HorizonMetrics(1, 0, None, None)
+    assert metrics[1] == HorizonMetrics(1, 0, None, None, None, None)
     assert metrics[2].evaluated == 1
+
+
+def test_coverage_and_width_by_hand() -> None:
+    result = BacktestResult(
+        PARAMETERS,
+        (
+            window(0, (10.0, NAN), ((9.0, 11.0, 13.0), NO_FORECAST)),
+            window(1, (14.0, NAN), ((11.0, 10.0, 12.0), NO_FORECAST)),
+        ),
+    )
+
+    metrics = by_horizon(result)[1]
+
+    assert metrics.coverage == pytest.approx(EXPECTED_COVERAGE_PARTIAL)
+    assert metrics.mean_width == pytest.approx(EXPECTED_WIDTH_H1)
+
+
+def test_band_bounds_count_as_covered() -> None:
+    metrics = by_horizon(sample_result())
+
+    assert metrics[1].coverage == pytest.approx(1.0)
+    assert metrics[2].coverage == pytest.approx(1.0)
+    assert metrics[1].mean_width == pytest.approx(EXPECTED_WIDTH_H1)
+
+
+def test_coverage_and_width_are_none_without_finite_targets() -> None:
+    empty = BacktestResult(PARAMETERS, (window(0, (NAN, NAN), (NO_FORECAST,) * 2),))
+
+    metrics = by_horizon(empty)[1]
+
+    assert metrics.coverage is None
+    assert metrics.mean_width is None
