@@ -3,11 +3,25 @@ name = "caudal-ia"
 version = "0.1.0"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "chronos-forecasting==2.3.2",
     "fastapi==0.143.0",
+    "numpy==2.5.4",
+    "pandas==3.0.6",
     "pydantic==2.14.0",
     "pydantic-settings==2.15.0",
+    "torch==2.14.1",
+    "tzdata==2026.1",
     "uvicorn==0.54.0",
 ]
+
+# PyTorch for CPU only: the default wheel on Linux pulls several GB of CUDA.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [build-system]
 requires = ["hatchling"]
@@ -17,13 +31,15 @@ build-backend = "hatchling.build"
 dev = [
     "httpx==0.28.1",
     "mypy==2.4.0",
+    "pandas-stubs==3.0.5.260914",
     "pytest==9.1.1",
     "ruff==0.16.10",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -m 'not chronos'"
+markers = ["chronos: descarga y ejecuta el modelo Chronos real (fuera del CI)"]
 
 [tool.ruff]
 line-length = 88
@@ -37,3 +53,7 @@ strict = true
 mypy_path = "src"
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["chronos", "chronos.*"]
+ignore_missing_imports = true

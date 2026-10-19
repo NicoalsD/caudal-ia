@@ -1,6 +1,8 @@
 import math
 from datetime import datetime
 
+import numpy as np
+
 from caudal_ia.config import Settings
 
 LENGTH_MISMATCH = "LENGTH_MISMATCH"
@@ -8,6 +10,9 @@ TOO_MANY_POINTS = "TOO_MANY_POINTS"
 TIMESTAMP_PARSE_ERROR = "TIMESTAMP_PARSE_ERROR"
 TIMESTAMPS_NOT_INCREASING = "TIMESTAMPS_NOT_INCREASING"
 NOT_FINITE_VALUE = "NOT_FINITE_VALUE"
+VALUE_OUT_OF_RANGE = "VALUE_OUT_OF_RANGE"
+# Chronos runs in float32: larger magnitudes would turn into infinity.
+MAX_MODEL_MAGNITUDE = float(np.finfo(np.float32).max)
 FIRST_TIMESTAMP_INDEX = 1
 
 _ERROR_MESSAGES = {
@@ -20,6 +25,7 @@ _ERROR_MESSAGES = {
         "Las marcas de tiempo deben ser estrictamente crecientes."
     ),
     NOT_FINITE_VALUE: "La serie tiene un valor que no es un número finito.",
+    VALUE_OUT_OF_RANGE: "La serie tiene un valor demasiado grande para el modelo.",
 }
 
 
@@ -38,7 +44,8 @@ class InsufficientHistoryError(Exception):
         self.received = received
         self.minimum = minimum
         super().__init__(
-            f"La serie tiene {received} puntos; se requieren al menos {minimum}."
+            f"La serie tiene {received} días con lectura; se requieren al menos "
+            f"{minimum}."
         )
 
 
@@ -71,9 +78,5 @@ def validate_series(
     for index, value in enumerate(values):
         if not math.isfinite(value):
             raise SeriesValidationError(NOT_FINITE_VALUE, index)
-
-    if len(values) < settings.forecast_min_points:
-        raise InsufficientHistoryError(
-            received=len(values),
-            minimum=settings.forecast_min_points,
-        )
+        if abs(value) > MAX_MODEL_MAGNITUDE:
+            raise SeriesValidationError(VALUE_OUT_OF_RANGE, index)

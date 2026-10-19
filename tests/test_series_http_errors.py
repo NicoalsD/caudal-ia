@@ -113,3 +113,18 @@ def test_series_above_maximum_points_returns_invalid_series(
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert response.json()["error"]["code"] == "INVALID_SERIES"
     assert response.json()["error"]["details"]["reason"] == "TOO_MANY_POINTS"
+
+
+def test_value_beyond_float32_returns_invalid_series(client: TestClient) -> None:
+    payload = build_payload(minimum_points())
+    payload["values"][NOT_FINITE_INDEX] = 1e39
+
+    response = client.post(FORECAST_PATH, json=payload)
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    error = response.json()["error"]
+    assert error["code"] == "INVALID_SERIES"
+    assert error["details"] == {
+        "reason": "VALUE_OUT_OF_RANGE",
+        "index": NOT_FINITE_INDEX,
+    }

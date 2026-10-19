@@ -132,3 +132,28 @@ def test_valid_request_returns_model_not_ready_when_model_is_not_loaded(
     assert response.headers[RETRY_AFTER_HEADER] == RETRY_AFTER_VALUE
     details = assert_error_envelope(response.json(), "MODEL_NOT_READY")
     assert details == {"model_name": get_settings().chronos_model_id}
+
+
+def test_readings_of_the_same_day_count_as_one_day(client: TestClient) -> None:
+    minimum = get_settings().forecast_min_points
+    payload = build_payload(minimum)
+    payload["timestamps"] = [
+        f"2026-10-01T{hour:02d}:00:00-05:00" for hour in range(minimum)
+    ]
+
+    response = client.post(FORECAST_PATH, json=payload)
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    details = assert_error_envelope(response.json(), "INSUFFICIENT_HISTORY")
+    assert details == {"received": 1, "minimum": minimum}
+
+
+def test_insufficient_history_is_reported_while_the_model_loads(
+    client: TestClient, not_loaded_readiness: ModelReadiness
+) -> None:
+    received = get_settings().forecast_min_points - 1
+
+    response = client.post(FORECAST_PATH, json=build_payload(received))
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert_error_envelope(response.json(), "INSUFFICIENT_HISTORY")
