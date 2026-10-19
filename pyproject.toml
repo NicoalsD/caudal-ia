@@ -10,7 +10,7 @@ dependencies = [
     "pydantic==2.14.0",
     "pydantic-settings==2.15.0",
     "torch==2.14.1",
-    "tzdata==2026.1",
+    "tzdata==2026.5",
     "uvicorn==0.54.0",
 ]
 
