@@ -38,7 +38,8 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -m 'not chronos'"
+markers = ["chronos: descarga y ejecuta el modelo Chronos real (fuera del CI)"]
 
 [tool.ruff]
 line-length = 88
