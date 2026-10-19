@@ -48,17 +48,32 @@ Solo esas tres cuentas. Cambio de cuenta, ramas, commits y PR: [`.agents/workflo
 
 Python 3.12 · FastAPI (Swagger en `/docs`) · Pydantic v2 · pydantic-settings · `chronos-forecasting` (Chronos-2 small o Chronos-Bolt small en CPU) · PyTorch CPU · pandas · numpy · uv · pytest · ruff (incluye `PLR2004`) · mypy.
 
-Comandos (disponibles cuando empiece la implementación):
+PyTorch se instala desde el índice CPU (`[tool.uv.sources]` en `pyproject.toml`); no agregues dependencias que traigan CUDA.
 
 ```bash
 uv sync
-uv run uvicorn caudal_ia.main:app --reload     # http://localhost:8000/docs
+uv run uvicorn caudal_ia.main:app --reload     # http://localhost:8000/docs (requiere IA_SERVICE_TOKEN)
 uv run pytest && uv run ruff check . && uv run mypy .
+uv run pytest -m chronos                       # prueba de humo con los pesos reales, fuera del CI
 ```
+
+Las pruebas nunca descargan pesos: `tests/conftest.py` carga un pronosticador determinista (`tests/fakes.py`).
 
 ## 5. Estado y pendientes
 
-**Fase 0.** La especificación funcional y técnica ya está en el backend (enlaces de la sección 1). Las guías operativas detalladas de `.agents/` y el código quedan a cargo de **Nicolas Mora** cuando se una:
+**Fases 1, 2, 3 y 6 implementadas** (I001 a I033): contrato, validación, token de servicio rotable y pronóstico con Chronos. Pendientes: backtest y evaluación (Fase 10, I034 a I041) y despliegue (Fase 12, I042 a I045). Mapa del código:
+
+| Módulo | Contenido |
+|---|---|
+| `routes/` | `POST /v1/forecasts`, `GET /v1/health`, `GET /v1/ready`, `GET /v1/models` |
+| `auth.py` | Token de servicio actual y anterior en tiempo constante |
+| `series_validation.py`, `request_validation.py` | Reglas del contrato (`INVALID_SERIES`, `VALIDATION_ERROR`) |
+| `forecasting/preprocessing.py` | Serie diaria en `SERIES_TIMEZONE`, `DailyAggregation`, huecos e historia mínima |
+| `forecasting/pipeline.py` | `ForecastPipeline` y `ServingForecastPipeline` |
+| `forecasting/chronos_adapter.py`, `creator.py`, `decorators.py` | Adapter, Factory Method y Decorators de Chronos |
+| `model_registry.py`, `model_loading.py` | Singleton con el modelo cargado en segundo plano |
+
+Guías operativas de `.agents/` pendientes:
 
 - [ ] `.agents/architecture.md`
 - [ ] `.agents/design-patterns.md`
@@ -71,7 +86,7 @@ uv run pytest && uv run ruff check . && uv run mypy .
 - [ ] `.agents/security.md`
 - [ ] `.agents/api-contract.md`
 
-Mientras tanto, cualquier agente debe guiarse por la especificación canónica del backend.
+Ante cualquier duda, manda la especificación canónica del backend.
 
 ## 6. Definition of Done
 
