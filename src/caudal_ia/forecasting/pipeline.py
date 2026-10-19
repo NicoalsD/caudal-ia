@@ -17,6 +17,7 @@ from caudal_ia.forecasting.quantiles import to_forecast_points
 from caudal_ia.forecasting.result_validation import validate_result
 
 ONE_DAY = timedelta(days=1)
+VERSION_SEPARATOR = "+"
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,13 @@ class ServingForecastPipeline(ForecastPipeline):
         self._settings = settings
         self._clock = clock
 
+    def model_version(self) -> str:
+        """Model version plus the daily aggregation, which also changes results."""
+        return (
+            f"{self._forecaster.version}{VERSION_SEPARATOR}"
+            f"{self._settings.resample_aggregation}"
+        )
+
     def preprocess(self, request: ForecastInput) -> DailySeries:
         series = prepare_daily_series(
             request.timestamps,
@@ -99,7 +107,7 @@ class ServingForecastPipeline(ForecastPipeline):
         first_day = series.last_day + ONE_DAY
         result = ForecastResult(
             model_name=self._forecaster.name,
-            model_version=self._forecaster.version,
+            model_version=self.model_version(),
             generated_at=self._clock(),
             notes=describe_gaps(series),
             points=to_forecast_points(forecast, first_day, self._settings.zone),

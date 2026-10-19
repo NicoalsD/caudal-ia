@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+from importlib.metadata import version
 
 MAX_PREDICTION_LENGTH = 30
+# Hugging Face models carry no version of their own; the weights are tied to the
+# chronos-forecasting release that loads them.
+CHRONOS_PACKAGE_VERSION = version("chronos-forecasting")
 CHRONOS_QUANTILE_LEVELS = (0.1, 0.5, 0.9)
 
 
@@ -16,14 +20,14 @@ class ModelSpec:
 CHRONOS_MODEL_SPECS = [
     ModelSpec(
         name="autogluon/chronos-2-small",
-        version="2.0.0",
+        version=CHRONOS_PACKAGE_VERSION,
         parameters_millions=28,
         quantile_levels=CHRONOS_QUANTILE_LEVELS,
         max_prediction_length=MAX_PREDICTION_LENGTH,
     ),
     ModelSpec(
         name="amazon/chronos-bolt-small",
-        version="por-verificar",  # Version not confirmed in the documentation.
+        version=CHRONOS_PACKAGE_VERSION,
         parameters_millions=48,
         quantile_levels=CHRONOS_QUANTILE_LEVELS,
         max_prediction_length=MAX_PREDICTION_LENGTH,
