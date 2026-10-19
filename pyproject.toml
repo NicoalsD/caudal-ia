@@ -1,0 +1,38 @@
+[project]
+name = "caudal-ia"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.143.0",
+    "pydantic==2.14.0",
+    "pydantic-settings==2.15.0",
+    "uvicorn==0.54.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "httpx==0.28.1",
+    "mypy==2.4.0",
+    "pytest==9.1.1",
+    "ruff==0.16.10",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "N", "PL"]
+
+[tool.mypy]
+strict = true
+mypy_path = "src"
+python_version = "3.12"

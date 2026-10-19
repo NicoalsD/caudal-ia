@@ -1,0 +1,33 @@
+name: CI IA
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.15"
+
+      - name: Instala dependencias
+        run: uv sync --locked
+
+      - name: Valida lint
+        run: uv run ruff check .
+
+      - name: Valida formato
+        run: uv run ruff format --check .
+
+      - name: Valida tipos
+        run: uv run mypy src
+
+      - name: Ejecuta pruebas
+        run: uv run pytest
