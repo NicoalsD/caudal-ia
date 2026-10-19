@@ -2,32 +2,38 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, Request
 
+from caudal_ia.adapters import ForecastResponseAdapter
 from caudal_ia.auth import require_service_token
 from caudal_ia.config import get_settings
 from caudal_ia.errors import (
-    INTERNAL_ERROR,
     MODEL_NOT_READY,
     RETRY_AFTER_SECONDS,
     ApiError,
 )
+from caudal_ia.forecasting.pipeline import ForecastInput, ServingForecastPipeline
+from caudal_ia.model_registry import ModelNotLoadedError, ModelRegistry
 from caudal_ia.request_validation import (
     validate_prediction_length,
     validate_quantile_levels,
 )
-from caudal_ia.schemas import ForecastRequest
+from caudal_ia.schemas import ForecastRequest, ForecastResponse
 from caudal_ia.series_validation import validate_series
 
 router = APIRouter(prefix="/v1", dependencies=[Depends(require_service_token)])
 
 MODEL_NOT_READY_MESSAGE = "El modelo aún no está listo para atender solicitudes."
-INFERENCE_NOT_IMPLEMENTED_MESSAGE = "La inferencia aún no está implementada."
+response_adapter = ForecastResponseAdapter()
 
 
 @router.post(
     "/forecasts",
     summary="Generar un pronóstico",
-    description="Valida una serie diaria y genera un pronóstico del nivel del tanque.",
-    response_model=None,
+    description=(
+        "Re-muestrea la serie a un valor por día en la zona del acueducto y "
+        "devuelve los cuantiles p10, p50 y p90 de los días siguientes. "
+        "No guarda la serie ni el pronóstico."
+    ),
+    response_model=ForecastResponse,
     responses={
         HTTPStatus.BAD_REQUEST: {"description": "La petición no cumple el contrato."},
         HTTPStatus.UNAUTHORIZED: {
@@ -45,25 +51,35 @@ INFERENCE_NOT_IMPLEMENTED_MESSAGE = "La inferencia aún no está implementada."
         },
     },
 )
-def create_forecast(request: Request, forecast_request: ForecastRequest) -> None:
+def create_forecast(
+    request: Request, forecast_request: ForecastRequest
+) -> ForecastResponse:
     settings = get_settings()
     validate_prediction_length(forecast_request.prediction_length, settings)
     validate_quantile_levels(forecast_request.quantile_levels)
     validate_series(forecast_request.timestamps, forecast_request.values, settings)
 
     readiness = request.app.state.readiness
-    if not readiness.is_loaded:
+    try:
+        if not readiness.is_loaded:
+            raise ModelNotLoadedError(readiness.model_name)
+        forecaster = ModelRegistry.get_instance().get_forecaster(readiness.model_name)
+    except ModelNotLoadedError as error:
         raise ApiError(
             HTTPStatus.SERVICE_UNAVAILABLE,
             MODEL_NOT_READY,
             MODEL_NOT_READY_MESSAGE,
             {"model_name": readiness.model_name},
             headers={"Retry-After": RETRY_AFTER_SECONDS},
-        )
+        ) from error
 
-    raise ApiError(
-        HTTPStatus.INTERNAL_SERVER_ERROR,
-        INTERNAL_ERROR,
-        INFERENCE_NOT_IMPLEMENTED_MESSAGE,
-        {},
+    pipeline = ServingForecastPipeline(forecaster, settings)
+    result = pipeline.run(
+        ForecastInput(
+            timestamps=forecast_request.timestamps,
+            values=forecast_request.values,
+            prediction_length=forecast_request.prediction_length,
+            quantile_levels=forecast_request.quantile_levels,
+        )
     )
+    return response_adapter.to_response(result)

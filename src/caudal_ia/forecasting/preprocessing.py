@@ -42,8 +42,8 @@ def describe_gaps(series: DailySeries) -> str | None:
     if series.missing_days == 0:
         return None
     return (
-        f"{series.missing_days} días sin lectura se enviaron al modelo como "
-        "valores faltantes, sin rellenar."
+        "Días sin lectura enviados al modelo como valores faltantes, sin "
+        f"rellenar: {series.missing_days}."
     )
 
 
