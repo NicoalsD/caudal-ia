@@ -26,6 +26,24 @@ class DailySeries:
     def valid_points(self) -> int:
         return sum(1 for value in self.values if math.isfinite(value))
 
+    @property
+    def missing_days(self) -> int:
+        return len(self.values) - self.valid_points
+
+
+def describe_gaps(series: DailySeries) -> str | None:
+    """Explain the days without readings for ``model.notes``.
+
+    Chronos-2 and Chronos-Bolt treat NaN in the context as missing values, so gaps
+    are passed to the model as they are instead of being filled in.
+    """
+    if series.missing_days == 0:
+        return None
+    return (
+        f"{series.missing_days} días sin lectura se enviaron al modelo como "
+        "valores faltantes, sin rellenar."
+    )
+
 
 class DailyAggregation(ABC):
     """Reduce the readings of one local day to a single value.
