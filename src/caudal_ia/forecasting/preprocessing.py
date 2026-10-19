@@ -8,6 +8,8 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
+from caudal_ia.series_validation import InsufficientHistoryError
+
 ONE_DAY = timedelta(days=1)
 
 
@@ -116,3 +118,12 @@ def prepare_daily_series(
         days=days,
         values=tuple(float(value) for value in resampled.to_numpy()),
     )
+
+
+def require_minimum_history(series: DailySeries, minimum: int) -> None:
+    """Fail when the resampled series has fewer valid days than ``minimum``.
+
+    Several readings on the same day count as one, and empty days do not count.
+    """
+    if series.valid_points < minimum:
+        raise InsufficientHistoryError(received=series.valid_points, minimum=minimum)
