@@ -62,6 +62,10 @@ class Settings(BaseSettings):
         ge=MINIMUM_SETTING_VALUE,
         validation_alias="MAX_PREDICTION_LENGTH",
     )
+    resample_aggregation: Literal["last", "mean"] = Field(
+        default="last",
+        validation_alias="RESAMPLE_AGGREGATION",
+    )
     series_timezone: str = Field(
         default=DEFAULT_SERIES_TIMEZONE,
         validation_alias="SERIES_TIMEZONE",
