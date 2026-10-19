@@ -1,11 +1,13 @@
 from functools import lru_cache
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_FORECAST_MIN_POINTS = 7
 DEFAULT_CHRONOS_MODEL_ID = "autogluon/chronos-2-small"
+DEFAULT_SERIES_TIMEZONE = "America/Bogota"
 DEFAULT_MAX_SERIES_POINTS = 2000
 DEFAULT_MAX_PREDICTION_LENGTH = 30
 DEFAULT_MAX_BODY_KIBIBYTES = 256
@@ -60,6 +62,10 @@ class Settings(BaseSettings):
         ge=MINIMUM_SETTING_VALUE,
         validation_alias="MAX_PREDICTION_LENGTH",
     )
+    series_timezone: str = Field(
+        default=DEFAULT_SERIES_TIMEZONE,
+        validation_alias="SERIES_TIMEZONE",
+    )
     max_body_bytes: int = Field(
         default=DEFAULT_MAX_BODY_BYTES,
         ge=MINIMUM_SETTING_VALUE,
@@ -77,6 +83,21 @@ class Settings(BaseSettings):
             minimum = MIN_SERVICE_TOKEN_BYTES
             raise ValueError(f"El token de servicio necesita al menos {minimum} bytes.")
         return token
+
+    @field_validator("series_timezone")
+    @classmethod
+    def require_known_timezone(cls, timezone: str) -> str:
+        """Reject time zone names that are not in the IANA database."""
+        try:
+            ZoneInfo(timezone)
+        except (ZoneInfoNotFoundError, ValueError) as error:
+            raise ValueError(f"Zona horaria desconocida: {timezone}.") from error
+        return timezone
+
+    @property
+    def zone(self) -> ZoneInfo:
+        """Time zone that defines where each day of the series starts."""
+        return ZoneInfo(self.series_timezone)
 
     def accepted_service_tokens(self) -> tuple[SecretStr, ...]:
         """Return the current token and, during a rotation, the previous one."""
