@@ -30,6 +30,7 @@ def test_list_specs_returns_default_models_in_registration_order() -> None:
     assert [spec.name for spec in specs] == [
         "autogluon/chronos-2-small",
         "amazon/chronos-bolt-small",
+        "amazon/chronos-bolt-tiny",
     ]
 
 

@@ -32,4 +32,12 @@ CHRONOS_MODEL_SPECS = [
         quantile_levels=CHRONOS_QUANTILE_LEVELS,
         max_prediction_length=MAX_PREDICTION_LENGTH,
     ),
+    # Smallest model: it fits the 512 MB of a free hosting instance.
+    ModelSpec(
+        name="amazon/chronos-bolt-tiny",
+        version=CHRONOS_PACKAGE_VERSION,
+        parameters_millions=9,
+        quantile_levels=CHRONOS_QUANTILE_LEVELS,
+        max_prediction_length=MAX_PREDICTION_LENGTH,
+    ),
 ]
