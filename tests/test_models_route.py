@@ -21,9 +21,10 @@ def test_models_route_lists_catalog_and_loaded_state(client: TestClient) -> None
         assert [model["name"] for model in payload["models"]] == [
             "autogluon/chronos-2-small",
             "amazon/chronos-bolt-small",
+            "amazon/chronos-bolt-tiny",
         ]
         assert payload["active"] == DEFAULT_CHRONOS_MODEL_ID
-        assert [model["loaded"] for model in payload["models"]] == [False, False]
+        assert [model["loaded"] for model in payload["models"]] == [False, False, False]
 
         readiness.mark_loaded()
         loaded_response = client.get("/v1/models")
@@ -31,6 +32,7 @@ def test_models_route_lists_catalog_and_loaded_state(client: TestClient) -> None
         assert loaded_response.status_code == HTTPStatus.OK
         assert [model["loaded"] for model in loaded_response.json()["models"]] == [
             True,
+            False,
             False,
         ]
     finally:
@@ -55,7 +57,7 @@ def test_models_route_uses_configured_active_model(
         assert response.status_code == HTTPStatus.OK
         payload = response.json()
         assert payload["active"] == "amazon/chronos-bolt-small"
-        assert [model["loaded"] for model in payload["models"]] == [False, True]
+        assert [model["loaded"] for model in payload["models"]] == [False, True, False]
     finally:
         app.state.readiness = previous_readiness
         monkeypatch.undo()

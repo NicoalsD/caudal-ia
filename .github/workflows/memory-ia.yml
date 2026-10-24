@@ -6,7 +6,7 @@ on:
       model_id:
         description: Modelo Chronos a medir
         required: false
-        default: autogluon/chronos-2-small
+        default: amazon/chronos-bolt-tiny
         type: string
   schedule:
     # Cada lunes a las 07:00 UTC.
@@ -25,7 +25,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      MODEL_ID: ${{ inputs.model_id || 'autogluon/chronos-2-small' }}
+      MODEL_ID: ${{ inputs.model_id || 'amazon/chronos-bolt-tiny' }}
+      # Memory of the free Render instance that serves the image.
+      MEMORY_LIMIT_MB: 512
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
     steps:
       - uses: actions/checkout@v4
 

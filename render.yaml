@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: caudal-ia
+    runtime: docker
+    repo: https://github.com/NicoalsD/caudal-ia
+    branch: develop
+    region: ohio
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /v1/health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: IA_SERVICE_TOKEN
+        sync: false
+      - key: PORT
+        value: "10000"
+      - key: SERIES_TIMEZONE
+        value: America/Bogota
+      - key: LOG_LEVEL
+        value: INFO
+      - key: API_DOCS_ENABLED
+        value: "true"
