@@ -2,7 +2,8 @@
 ARG PYTHON_IMAGE=python:3.12.15-slim-trixie
 FROM ${PYTHON_IMAGE}
 
-ARG CHRONOS_MODEL_ID=autogluon/chronos-2-small
+# Smallest Chronos model: it fits the 512 MB of a free instance (see deployment.md).
+ARG CHRONOS_MODEL_ID=amazon/chronos-bolt-tiny
 ARG APP_UID=1000
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.15 /uv /uvx /bin/
@@ -10,6 +11,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.15 /uv /uvx /bin/
 # Hugging Face Spaces requires the container to run as user 1000.
 RUN useradd --create-home --uid ${APP_UID} --shell /usr/sbin/nologin app
 
+# One torch thread: on a fraction of a CPU, more threads only fight for it
+# (a 2000-point forecast took 11 s with the default pool and 0.25 s with one).
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
@@ -19,6 +22,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH=/app/.venv/bin:$PATH \
     HF_HOME=/home/app/.cache/huggingface \
     PORT=7860 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
     CHRONOS_MODEL_ID=${CHRONOS_MODEL_ID}
 
 WORKDIR /app
