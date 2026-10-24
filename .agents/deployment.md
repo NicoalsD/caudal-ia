@@ -4,7 +4,7 @@ Guía operativa de la Fase 12. Especificación: [Módulo de IA, sección 12](htt
 
 La imagen (`Dockerfile`) descarga los pesos de Chronos al construirse, corre como usuario 1000, escucha en el puerto `PORT` (7860 por defecto) y no lleva ningún secreto. El token se pasa siempre como variable o secreto del hosting.
 
-## 1. Hugging Face Spaces (opción inicial)
+## 1. Hugging Face Spaces (requiere PRO o una cuenta con más de 30 días)
 
 ### 1.1 Crear el Space
 
@@ -38,7 +38,7 @@ Configúralos en **Settings** del Space.
 | Variable | `FORECAST_CACHE_SIZE`, `FORECAST_CACHE_TTL_SECONDS` | No | `64` y `300` por defecto. |
 | Variable | `MAX_SERIES_POINTS`, `MAX_PREDICTION_LENGTH`, `MAX_BODY_BYTES` | No | `2000`, `30` y `262144` por defecto (límites de la sección 6). |
 
-`CHRONOS_MODEL_ID` se fija en el `Dockerfile` (`ARG` por defecto `autogluon/chronos-2-small`). Como la imagen corre con `HF_HUB_OFFLINE=1`, cambiar el modelo exige reconstruir la imagen con otro valor, no solo cambiar una variable del Space.
+`CHRONOS_MODEL_ID` se fija en el `Dockerfile` (`ARG` por defecto `amazon/chronos-bolt-tiny`, ver sección 2). Como la imagen corre con `HF_HUB_OFFLINE=1`, cambiar el modelo exige reconstruir la imagen con otro valor, no solo cambiar una variable del Space.
 
 El token no debe aparecer en el código, en el `Dockerfile`, en los logs ni en `.env` dentro del repositorio.
 
@@ -51,24 +51,27 @@ curl -s https://<usuario>-caudal-ia.hf.space/v1/ready     # 503 mientras carga, 
 
 `/v1/ready` tarda lo que tarde la carga del modelo desde la caché de la imagen. Mide ese tiempo con `scripts/measure_memory.py` (sección 5) antes de dar el servicio por listo.
 
-## 2. Alternativa: Render
+## 2. Render gratis (despliegue actual)
 
-Render sirve la misma imagen como servicio web Docker.
+Hugging Face no sirvió con cuentas gratis: los Spaces Docker y la visibilidad protegida exigen PRO, y ZeroGPU exige una cuenta con más de 30 días. El servicio corre en Render, plan **free**, con la misma imagen.
 
-- Plan con memoria suficiente para la **RAM pico** de la tabla de la sección 5 más el margen que decida el equipo. Verifica en la documentación de Render el límite de memoria del plan antes de elegirlo.
-- Health check: `GET /v1/health`.
-- Variables y secreto: los mismos que en la sección 1.2, configurados en el panel de Render. Render inyecta `PORT`; el `CMD` lo respeta.
-- `CHRONOS_MODEL_ID` se cambia igual que en Hugging Face: reconstruyendo la imagen.
+- **Blueprint:** `render.yaml` en la raíz define el servicio `caudal-ia` (Docker, rama `develop`, región `ohio` como `caudal-api`, health check `GET /v1/health`, despliegue manual).
+- **Modelo:** la imagen se construye con `amazon/chronos-bolt-tiny` (9 M de parámetros), que es el `ARG` por defecto del `Dockerfile`. `autogluon/chronos-2-small` sigue siendo el valor por defecto de `config.py` para desarrollo local, pero en un contenedor de 512 MB llega al tope de memoria (sección 5).
+- **Hilos:** la imagen fija `OMP_NUM_THREADS=1` y `MKL_NUM_THREADS=1`. Con una fracción de CPU, el grupo de hilos por defecto de torch hace que un pronóstico de 2.000 puntos tarde 11 s, por encima de los 10 s de `IA_READ_TIMEOUT_MS` del backend; con un hilo tarda 0,2 s.
+- **Secreto:** `IA_SERVICE_TOKEN` se pone en el panel de Render (`sync: false`, no va en el blueprint). Las variables opcionales son las de la sección 1.2.
+- **Puerto:** Render inyecta `PORT`; el blueprint lo fija en `10000` como el backend y el `CMD` lo respeta.
+- **Inactividad:** el plan free apaga el servicio sin tráfico y tarda en despertar. La primera llamada del backend tras un apagado vence el tiempo de espera y queda registrada con `fallback_reason = IA_TIMEOUT`; las siguientes ya llegan a Chronos.
+- `CHRONOS_MODEL_ID` se cambia reconstruyendo la imagen (`HF_HUB_OFFLINE=1`), igual que en Hugging Face.
 
 ## 3. Rotación del token (contrato)
 
 El servicio acepta el token actual (`IA_SERVICE_TOKEN`) y el anterior (`IA_SERVICE_TOKEN_PREVIOUS`) en tiempo constante. Así la rotación no corta el servicio. Los tres pasos:
 
-1. **Acepta ambos.** En el Space, pon `IA_SERVICE_TOKEN_PREVIOUS` = token actual y `IA_SERVICE_TOKEN` = token nuevo. Espera al reinicio y comprueba que `/v1/ready` responde.
+1. **Acepta ambos.** En el servicio (Render o Space), pon `IA_SERVICE_TOKEN_PREVIOUS` = token actual y `IA_SERVICE_TOKEN` = token nuevo. Espera al reinicio y comprueba que `/v1/ready` responde.
 2. **Cambia el backend.** Actualiza `IA_SERVICE_TOKEN` del backend al token nuevo. Mientras tanto el servicio sigue aceptando el anterior, así que no hay corte.
-3. **Retira el anterior.** Cuando el backend use el token nuevo, borra `IA_SERVICE_TOKEN_PREVIOUS` en el Space. El token anterior deja de funcionar.
+3. **Retira el anterior.** Cuando el backend use el token nuevo, borra `IA_SERVICE_TOKEN_PREVIOUS` en el servicio. El token anterior deja de funcionar.
 
-Cada cambio de variable reinicia el Space.
+Cada cambio de variable reinicia el servicio.
 
 ## 4. Configuración del backend
 
@@ -99,11 +102,24 @@ Notas:
 - **Límite:** 2048 MB es el valor por defecto de `MEMORY_LIMIT_MB` y es orientativo, no un criterio de hosting. Ajústalo al plan real con `--max-rss-mb` o con la variable.
 - La latencia es de CPU de escritorio; en un plan de hosting con menos núcleos será mayor. Vuelve a medir allí antes de fijar objetivos de latencia.
 
+### 5.1 Contenedor con los límites de Render free
+
+Medido el 24 de octubre de 2026 con `podman run --cpus=0.1 --memory=512m --memory-swap=512m`, `FORECAST_CACHE_SIZE=0` y series distintas en cada petición. Memoria leída del cgroup del contenedor (`memory.peak`, y `anon` de `memory.stat`).
+
+| Modelo | Hilos de torch | `/v1/ready` (s) | 60 puntos, horizonte 3 (s) | 2.000 puntos, horizonte 30 (s) | 3 peticiones de 2.000 puntos a la vez (s) | Pico del contenedor (MiB) | Resultado |
+|---|---|---|---|---|---|---|---|
+| `amazon/chronos-bolt-tiny` | por defecto | 39 | 3,6 | 11,2 | 1,8 a 2,0 | 355 | Supera el tiempo de espera del backend |
+| `amazon/chronos-bolt-tiny` | 1 | 38 | 0,07 | 0,2 | 0,6 a 0,7 | 334 (anon 293) | Pasa |
+| `autogluon/chronos-2-small` | por defecto, sin el tope de CPU | 8 | 0,1 | 0,2 | no medido | 512 (el tope) | No cabe con margen |
+
+En ninguna corrida de `chronos-bolt-tiny` hubo eventos `max` ni `oom` en `memory.events`.
+
 Para repetir la medición:
 
 ```bash
 uv run python scripts/measure_memory.py                                  # chronos-2-small
 uv run python scripts/measure_memory.py --model-id amazon/chronos-bolt-small
+OMP_NUM_THREADS=1 uv run python scripts/measure_memory.py --model-id amazon/chronos-bolt-tiny --max-rss-mb 512
 ```
 
 El script sale con código `1` si el pico supera el límite. El workflow `.github/workflows/memory-ia.yml` lo ejecuta semanalmente, en PR que toquen dependencias o `src/caudal_ia/forecasting/**`, y en manual.

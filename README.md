@@ -4,7 +4,7 @@ Servicio de pronóstico del nivel del tanque a 1 a 3 días con **Chronos** (cuan
 
 ## Estado
 
-**Fase 6: pronóstico con Chronos.** `POST /v1/forecasts` re-muestrea la serie a un valor por día en `America/Bogota`, la envía a Chronos (por defecto `autogluon/chronos-2-small`, en CPU) y devuelve `p10`, `p50` y `p90` de los días siguientes. Protegido con token de servicio rotable. Especificación: [Módulo de IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Modulo-IA.md) y [Contrato backend-IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Contrato-IA.md). El backtest offline (Fase 10) compara Chronos con la estimación simple: [guía](.agents/evaluation.md). La imagen Docker para Hugging Face Spaces (Fase 12) está lista; falta publicarla.
+**Fase 6: pronóstico con Chronos.** `POST /v1/forecasts` re-muestrea la serie a un valor por día en `America/Bogota`, la envía a Chronos (por defecto `autogluon/chronos-2-small`, en CPU) y devuelve `p10`, `p50` y `p90` de los días siguientes. Protegido con token de servicio rotable. Especificación: [Módulo de IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Modulo-IA.md) y [Contrato backend-IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Contrato-IA.md). El backtest offline (Fase 10) compara Chronos con la estimación simple: [guía](.agents/evaluation.md). La imagen Docker (Fase 12) se despliega en Render free con `amazon/chronos-bolt-tiny` y `render.yaml`: [despliegue](.agents/deployment.md#2-render-gratis-despliegue-actual).
 
 ## Uso local
 
@@ -30,7 +30,7 @@ docker run --rm -p 7860:7860 -e IA_SERVICE_TOKEN=<token-de-32-bytes-o-mas> cauda
 
 Hugging Face Spaces (SDK Docker) y Render, con secretos, variables, rotación del token y la configuración del backend: [.agents/deployment.md](.agents/deployment.md).
 
-Memoria y latencia medidas en CPU de escritorio (RSS pico de 503 MB con `autogluon/chronos-2-small` y 577 MB con `amazon/chronos-bolt-small`): [sección 5](.agents/deployment.md#5-mediciones-modulo-ia-sección-121). Repetir con `uv run python scripts/measure_memory.py`.
+Memoria y latencia medidas en CPU de escritorio (RSS pico de 503 MB con `autogluon/chronos-2-small` y 577 MB con `amazon/chronos-bolt-small`; 334 MiB con `amazon/chronos-bolt-tiny` en un contenedor de 512 MB): [sección 5](.agents/deployment.md#5-mediciones-modulo-ia-sección-121). Repetir con `uv run python scripts/measure_memory.py`.
 
 ## Documentación
 
