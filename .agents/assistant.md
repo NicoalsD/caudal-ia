@@ -28,7 +28,8 @@ Cualquier servidor compatible con OpenAI sirve; solo cambian las variables:
 
 | Proveedor | `LLM_BASE_URL` | `LLM_MODEL` |
 |---|---|---|
-| Gemini (por defecto) | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.5-flash` |
+| OpenRouter, Nemotron de NVIDIA gratis (por defecto) | `https://openrouter.ai/api/v1/` | `nvidia/nemotron-3.5-super-vl:free` (acepta `response_format` JSON) |
+| Gemini | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.5-flash` |
 | OpenAI | `https://api.openai.com/v1/` | un modelo con salida JSON |
 | Local (Ollama) | `http://localhost:11434/v1/` | el modelo descargado |
 
