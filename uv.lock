@@ -109,6 +109,7 @@ source = { editable = "." }
 dependencies = [
     { name = "chronos-forecasting" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pydantic" },
@@ -121,7 +122,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "mypy" },
     { name = "pandas-stubs" },
     { name = "pytest" },
@@ -132,6 +132,7 @@ dev = [
 requires-dist = [
     { name = "chronos-forecasting", specifier = "==2.3.2" },
     { name = "fastapi", specifier = "==0.143.0" },
+    { name = "httpx", specifier = "==0.28.1" },
     { name = "numpy", specifier = "==2.5.4" },
     { name = "pandas", specifier = "==3.0.6" },
     { name = "pydantic", specifier = "==2.14.0" },
@@ -143,7 +144,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = "==0.28.1" },
     { name = "mypy", specifier = "==2.4.0" },
     { name = "pandas-stubs", specifier = "==3.0.5.260914" },
     { name = "pytest", specifier = "==9.1.1" },
