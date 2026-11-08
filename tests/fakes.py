@@ -1,5 +1,6 @@
 import math
 from collections.abc import Sequence
+from typing import Any
 
 from caudal_ia.config import Settings
 from caudal_ia.forecasting.creator import ForecasterCreator
@@ -57,3 +58,29 @@ class FailingForecasterCreator(ForecasterCreator):
 
     def create_forecaster(self, spec: ModelSpec, settings: Settings) -> Forecaster:
         raise OSError(f"cannot load {spec.name}")
+
+
+class FakeLlmClient:
+    """LLM double: returns a canned object or raises, and records the prompts."""
+
+    def __init__(
+        self,
+        answer: dict[str, Any] | None = None,
+        error: Exception | None = None,
+        model: str = "fake-llm-1",
+    ) -> None:
+        self._answer = answer
+        self._error = error
+        self._model = model
+        self.prompts: list[tuple[str, str]] = []
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    def complete_json(self, system: str, user: str) -> dict[str, Any]:
+        self.prompts.append((system, user))
+        if self._error is not None:
+            raise self._error
+        assert self._answer is not None
+        return self._answer
