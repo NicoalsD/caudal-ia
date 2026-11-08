@@ -6,6 +6,8 @@ Servicio de pronóstico del nivel del tanque a 1 a 3 días con **Chronos** (cuan
 
 **Fase 6: pronóstico con Chronos.** `POST /v1/forecasts` re-muestrea la serie a un valor por día en `America/Bogota`, la envía a Chronos (por defecto `autogluon/chronos-2-small`, en CPU) y devuelve `p10`, `p50` y `p90` de los días siguientes. Protegido con token de servicio rotable. Especificación: [Módulo de IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Modulo-IA.md) y [Contrato backend-IA](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Contrato-IA.md). El backtest offline (Fase 10) compara Chronos con la estimación simple: [guía](.agents/evaluation.md). La imagen Docker (Fase 12) se despliega en Render free con `amazon/chronos-bolt-tiny` y `render.yaml`: [despliegue](.agents/deployment.md#2-render-gratis-despliegue-actual).
 
+**Fase 13: asistente.** Tres endpoints con el mismo token de servicio y el mismo formato de error: `POST /v1/insights/recommendations` (hasta 5 acciones sobre las llaves), `POST /v1/insights/report` (informe del periodo) y `POST /v1/insights/ask` (pregunta sobre el estado). Llaman a un LLM compatible con OpenAI (`{LLM_BASE_URL}chat/completions`, `response_format` `json_object`; por defecto Gemini) y, si no hay `LLM_API_KEY` o el LLM da timeout, 429 o JSON inválido, responden con reglas deterministas (`source: "RULES"`, `model: "rules-v1"`). Nunca recomiendan OPEN con el tanque en o bajo el piso de reserva, ni con el LLM ni con las reglas, y descartan los `valve_id` que no vengan en el snapshot. Detalle: [asistente](.agents/assistant.md).
+
 ## Uso local
 
 ```bash

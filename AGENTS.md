@@ -41,7 +41,7 @@ Solo esas tres cuentas. Cambio de cuenta, ramas, commits y PR: [`.agents/workflo
 - **Pull requests:** todo PR se fusiona en cuanto sus checks estén en verde, con merge commit y con la cuenta de su autor (`gh auth switch` a esa cuenta antes de `gh pr merge`); ningún agente deja PR abiertos. Pasos: [`.agents/workflow.md`](.agents/workflow.md#4-pull-requests-y-fusión-obligatorio).
 - **Sin valores quemados:** parámetros en variables de entorno (pydantic-settings) documentadas en `.env.example`; Ruff `PLR2004` activo. Los parámetros de negocio del acueducto vienen del backend.
 - **Seguridad:** El token de servicio (≥ 32 bytes) se compara en tiempo constante y admite rotación; las series tienen como máximo 2.000 puntos finitos; el servicio no guarda datos. Política: [SECURITY.md](SECURITY.md) y [Seguridad](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Seguridad.md).
-- **Patrones de diseño explícitos** aunque Python ya traiga algo parecido (`@decorator`, generadores, módulos): `ModelRegistry` (Singleton), `ForecasterCreator` (Factory Method), `ChronosForecasterAdapter` (Adapter), `CachingForecaster` y `TimingForecaster` (Decorator), `RollingWindowIterator` (Iterator), `Forecaster` (Strategy), `ForecastPipeline` y `Backtest` (Template Method). Catálogo: [Patrones de diseño](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Patrones-de-diseno.md).
+- **Patrones de diseño explícitos** aunque Python ya traiga algo parecido (`@decorator`, generadores, módulos): `ModelRegistry` (Singleton), `ForecasterCreator` (Factory Method), `ChronosForecasterAdapter` (Adapter), `CachingForecaster` y `TimingForecaster` (Decorator), `RollingWindowIterator` (Iterator), `Forecaster` y `RulesAdvisor` (Strategy), `LlmClient` (Port) con `OpenAiCompatibleClient` (Adapter), `ForecastPipeline` y `Backtest` (Template Method). Catálogo: [Patrones de diseño](https://github.com/NicoalsD/caudal-backend/blob/develop/docs/Patrones-de-diseno.md).
 - **Diagramas** con draw.io (MCP y sus iconos): `.drawio` + `.png` en `docs/images/`.
 
 ## 4. Stack y comandos
@@ -61,11 +61,12 @@ Las pruebas nunca descargan pesos: `tests/conftest.py` carga un pronosticador de
 
 ## 5. Estado y pendientes
 
-**Fases 1, 2, 3, 6, 10 y 12 implementadas** (I001 a I045): contrato, validación, token de servicio rotable, pronóstico con Chronos, backtest offline e imagen Docker para Hugging Face Spaces. Pendiente: publicar el Space y configurar el backend ([guía](.agents/deployment.md)). Mapa del código:
+**Fases 1, 2, 3, 6, 10 y 12 implementadas** (I001 a I045); asistente de la Fase 13 (I052 a I069) en desarrollo: contrato, validación, token de servicio rotable, pronóstico con Chronos, backtest offline e imagen Docker para Hugging Face Spaces. Pendiente: publicar el Space y configurar el backend ([guía](.agents/deployment.md)). Mapa del código:
 
 | Módulo | Contenido |
 |---|---|
-| `routes/` | `POST /v1/forecasts`, `GET /v1/health`, `GET /v1/ready`, `GET /v1/models` |
+| `routes/` | `POST /v1/forecasts`, `GET /v1/health`, `GET /v1/ready`, `GET /v1/models`, `POST /v1/insights/recommendations`, `POST /v1/insights/report`, `POST /v1/insights/ask` |
+| `insights/` | Asistente: `LlmClient` (puerto) y `OpenAiCompatibleClient` (Adapter), `prompts.py`, `schemas.py`, `RulesAdvisor` (respaldo), `guard.py` (piso de reserva, `valve_id`, máximo 5) e `InsightsService` |
 | `auth.py` | Token de servicio actual y anterior en tiempo constante |
 | `series_validation.py`, `request_validation.py` | Reglas del contrato (`INVALID_SERIES`, `VALIDATION_ERROR`) |
 | `forecasting/preprocessing.py` | Serie diaria en `SERIES_TIMEZONE`, `DailyAggregation`, huecos e historia mínima |
@@ -86,6 +87,7 @@ Guías operativas de `.agents/` pendientes:
 - [x] `.agents/deployment.md`
 - [ ] `.agents/security.md`
 - [ ] `.agents/api-contract.md`
+- [x] `.agents/assistant.md`
 
 Ante cualquier duda, manda la especificación canónica del backend.
 
