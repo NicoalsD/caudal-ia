@@ -21,3 +21,13 @@ services:
         value: INFO
       - key: API_DOCS_ENABLED
         value: "true"
+      - key: LLM_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai/
+      - key: LLM_MODEL
+        value: gemini-2.5-flash
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_TIMEOUT_S
+        value: "15"
+      - key: LLM_MAX_RETRIES
+        value: "1"
