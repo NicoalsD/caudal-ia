@@ -13,6 +13,7 @@ from caudal_ia.model_registry import resolve_active_model
 from caudal_ia.readiness import ModelReadiness
 from caudal_ia.routes.forecasts import router as forecasts_router
 from caudal_ia.routes.health import router as health_router
+from caudal_ia.routes.insights import router as insights_router
 from caudal_ia.routes.models import router as models_router
 
 settings = get_settings()
@@ -45,3 +46,4 @@ app.state.readiness = ModelReadiness(active_spec.name)
 app.include_router(health_router)
 app.include_router(models_router)
 app.include_router(forecasts_router)
+app.include_router(insights_router)

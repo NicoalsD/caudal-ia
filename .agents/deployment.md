@@ -56,6 +56,7 @@ curl -s https://<usuario>-caudal-ia.hf.space/v1/ready     # 503 mientras carga, 
 Hugging Face no sirvió con cuentas gratis: los Spaces Docker y la visibilidad protegida exigen PRO, y ZeroGPU exige una cuenta con más de 30 días. El servicio corre en Render, plan **free**, con la misma imagen.
 
 - **Blueprint:** `render.yaml` en la raíz define el servicio `caudal-ia` (Docker, rama `develop`, región `ohio` como `caudal-api`, health check `GET /v1/health`, despliegue manual).
+- **Memoria antes de desplegar:** la instancia gratuita tiene 512 MB. Antes de cada despliegue manual se corre el workflow **Memoria IA** (Actions > Memoria IA > Run workflow) sobre la rama que se va a desplegar; si el pico supera 512 MB, no se despliega. Ese chequeo ya no corre en los PR ni aplica en local.
 - **Modelo:** la imagen se construye con `amazon/chronos-bolt-tiny` (9 M de parámetros), que es el `ARG` por defecto del `Dockerfile`. `autogluon/chronos-2-small` sigue siendo el valor por defecto de `config.py` para desarrollo local, pero en un contenedor de 512 MB llega al tope de memoria (sección 5).
 - **Hilos:** la imagen fija `OMP_NUM_THREADS=1` y `MKL_NUM_THREADS=1`. Con una fracción de CPU, el grupo de hilos por defecto de torch hace que un pronóstico de 2.000 puntos tarde 11 s, por encima de los 10 s de `IA_READ_TIMEOUT_MS` del backend; con un hilo tarda 0,2 s.
 - **Secreto:** `IA_SERVICE_TOKEN` se pone en el panel de Render (`sync: false`, no va en el blueprint). Las variables opcionales son las de la sección 1.2.

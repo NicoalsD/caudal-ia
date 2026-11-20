@@ -21,6 +21,17 @@ DEFAULT_BACKTEST_COVERAGE_MAX = 0.9
 MINIMUM_SETTING_VALUE = 1
 MIN_SERVICE_TOKEN_BYTES = 32
 TOKEN_ENCODING = "utf-8"
+DEFAULT_LLM_BASE_URL = "https://openrouter.ai/api/v1/"
+DEFAULT_LLM_MODEL = "nvidia/nemotron-3.5-super-vl:free"
+DEFAULT_LLM_TIMEOUT_S = 15.0
+DEFAULT_LLM_MAX_RETRIES = 1
+MAX_LLM_MAX_RETRIES = 5
+DEFAULT_LLM_MAX_OUTPUT_TOKENS = 2048
+DEFAULT_LLM_MAX_RESPONSE_BYTES = 65536
+DEFAULT_LLM_TEMPERATURE = 0.2
+MAX_LLM_TEMPERATURE = 2.0
+DEFAULT_ASSISTANT_OPEN_MARGIN_PCT = 10.0
+MAX_PERCENT = 100.0
 
 
 class Settings(BaseSettings):
@@ -107,6 +118,51 @@ class Settings(BaseSettings):
         ge=0.0,
         le=1.0,
         validation_alias="BACKTEST_COVERAGE_MAX",
+    )
+
+    llm_base_url: str = Field(
+        default=DEFAULT_LLM_BASE_URL,
+        min_length=1,
+        validation_alias="LLM_BASE_URL",
+    )
+    llm_model: str = Field(
+        default=DEFAULT_LLM_MODEL,
+        min_length=1,
+        validation_alias="LLM_MODEL",
+    )
+    llm_api_key: SecretStr | None = Field(default=None, validation_alias="LLM_API_KEY")
+    llm_timeout_s: float = Field(
+        default=DEFAULT_LLM_TIMEOUT_S,
+        gt=0.0,
+        validation_alias="LLM_TIMEOUT_S",
+    )
+    llm_max_retries: int = Field(
+        default=DEFAULT_LLM_MAX_RETRIES,
+        ge=0,
+        le=MAX_LLM_MAX_RETRIES,
+        validation_alias="LLM_MAX_RETRIES",
+    )
+    llm_max_output_tokens: int = Field(
+        default=DEFAULT_LLM_MAX_OUTPUT_TOKENS,
+        ge=MINIMUM_SETTING_VALUE,
+        validation_alias="LLM_MAX_OUTPUT_TOKENS",
+    )
+    llm_max_response_bytes: int = Field(
+        default=DEFAULT_LLM_MAX_RESPONSE_BYTES,
+        ge=MINIMUM_SETTING_VALUE,
+        validation_alias="LLM_MAX_RESPONSE_BYTES",
+    )
+    llm_temperature: float = Field(
+        default=DEFAULT_LLM_TEMPERATURE,
+        ge=0.0,
+        le=MAX_LLM_TEMPERATURE,
+        validation_alias="LLM_TEMPERATURE",
+    )
+    assistant_open_margin_pct: float = Field(
+        default=DEFAULT_ASSISTANT_OPEN_MARGIN_PCT,
+        ge=0.0,
+        le=MAX_PERCENT,
+        validation_alias="ASSISTANT_OPEN_MARGIN_PCT",
     )
 
     @model_validator(mode="after")
